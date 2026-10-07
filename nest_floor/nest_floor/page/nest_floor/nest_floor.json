@@ -1,0 +1,36 @@
+{
+ "creation": "2026-10-07 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "scan",
+ "idx": 0,
+ "modified": "2026-10-07 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Nest Floor",
+ "name": "nest-floor",
+ "owner": "Administrator",
+ "page_name": "nest-floor",
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "Manufacturing User"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Shop Floor"
+}

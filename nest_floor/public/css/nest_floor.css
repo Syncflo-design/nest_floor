@@ -1,0 +1,787 @@
+/* nest_floor: shop floor and site screens.
+ *
+ * Sized for a gloved thumb on a phone held at arm's length: nothing under 15px, no target
+ * under 44px, visible focus, colour never carrying meaning on its own. Colours follow the
+ * nest_theme palette tokens; the var() fallbacks keep it right on a site without it.
+ * Only .nf- classes are styled, so nothing here leaks into the desk.
+ * Bump BUILD_MARKER in nest_floor.js with every change here, or browsers keep the old file.
+ */
+
+.nf-root {
+	--nf-primary: var(--primary-color, #6b85a3);
+	--nf-strong: color-mix(in srgb, var(--nf-primary) 72%, #000);
+	--nf-tint: color-mix(in srgb, var(--nf-primary) 13%, transparent);
+	--nf-ink: var(--text-color, #1f2937);
+	--nf-muted: var(--text-muted, #5b6471);
+	--nf-line: var(--border-color, #d6dbe3);
+	--nf-bg: var(--card-bg, #ffffff);
+	--nf-sunken: var(--subtle-fg, #f1f4f8);
+	--nf-good: #15803d;
+	--nf-good-tint: rgba(21, 128, 61, 0.12);
+	--nf-bad: #b91c1c;
+
+	max-width: 640px;
+	margin: 0 auto;
+	/* Clears the sticky action bar and a phone's gesture bar. */
+	padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+	font-size: 16px;
+	line-height: 1.45;
+	color: var(--nf-ink);
+}
+
+[data-theme="dark"] .nf-root {
+	--nf-strong: color-mix(in srgb, var(--nf-primary) 85%, #000);
+	--nf-good: #4ade80;
+	--nf-good-tint: rgba(74, 222, 128, 0.14);
+	--nf-bad: #fca5a5;
+}
+
+.nf-root.nf-in-dialog {
+	padding: 0;
+	max-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nf-root *,
+	.nf-root *::before,
+	.nf-root *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+.nf-root *,
+.nf-root *::before,
+.nf-root *::after {
+	box-sizing: border-box;
+}
+
+.nf-root button,
+.nf-root select,
+.nf-root input {
+	font-family: inherit;
+	touch-action: manipulation;
+}
+
+.nf-root :focus-visible {
+	outline: 3px solid var(--nf-primary);
+	outline-offset: 2px;
+}
+
+.nf-root .ph {
+	line-height: 1;
+}
+
+/* ---- home --------------------------------------------------------------- */
+
+.nf-hero {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 16px 18px;
+	margin-bottom: 12px;
+	border-radius: 14px;
+	color: #fff;
+	background: linear-gradient(135deg, var(--nf-primary), var(--accent-color, #82a085));
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.nf-hero-mark {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	flex: 0 0 48px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.18);
+	font-size: 28px;
+}
+
+.nf-hero-title {
+	font-size: 22px;
+	font-weight: 700;
+}
+
+.nf-hero-sub {
+	font-size: 14px;
+	opacity: 0.92;
+}
+
+.nf-menu {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 4px 0 12px;
+}
+
+.nf-tile {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	width: 100%;
+	text-align: left;
+	padding: 18px 14px;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+	border-radius: 14px;
+	cursor: pointer;
+	transition: border-color 150ms ease-out, background 150ms ease-out, transform 150ms ease-out;
+}
+
+.nf-tile:hover {
+	border-color: var(--nf-primary);
+}
+
+.nf-tile:active {
+	transform: scale(0.985);
+	background: var(--nf-tint);
+	border-color: var(--nf-primary);
+}
+
+.nf-tile-mark {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	flex: 0 0 48px;
+	border-radius: 12px;
+	background: var(--nf-tint);
+	color: var(--nf-strong);
+	font-size: 26px;
+}
+
+.nf-tile-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.nf-tile-title {
+	display: block;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.nf-tile-sub {
+	display: block;
+	margin-top: 2px;
+	font-size: 14px;
+	color: var(--nf-muted);
+}
+
+.nf-tile-go {
+	color: var(--nf-muted);
+	font-size: 20px;
+}
+
+.nf-links {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid var(--nf-line);
+}
+
+.nf-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 14px;
+	font-size: 15px;
+	color: var(--nf-muted);
+	background: transparent;
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.nf-link:hover,
+.nf-link:focus-visible {
+	color: var(--nf-ink);
+	background: var(--nf-sunken);
+}
+
+/* ---- header ------------------------------------------------------------- */
+
+.nf-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.nf-back {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	flex: 0 0 48px;
+	font-size: 22px;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+	border-radius: 12px;
+	cursor: pointer;
+}
+
+.nf-back:active {
+	background: var(--nf-sunken);
+	border-color: var(--nf-primary);
+}
+
+.nf-head-text {
+	min-width: 0;
+}
+
+.nf-title {
+	font-size: 21px;
+	font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nf-sub {
+	font-size: 14px;
+	color: var(--nf-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ---- scan box ----------------------------------------------------------- */
+
+.nf-scan {
+	position: relative;
+	margin-bottom: 12px;
+}
+
+.nf-scan-mark {
+	position: absolute;
+	left: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 24px;
+	color: var(--nf-strong);
+	pointer-events: none;
+}
+
+.nf-input {
+	width: 100%;
+	min-height: 60px;
+	padding: 0 68px 0 50px;
+	font-size: 18px;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-primary);
+	border-radius: 12px;
+}
+
+.nf-input::placeholder {
+	color: var(--nf-muted);
+	font-size: 16px;
+}
+
+.nf-camera {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 48px;
+	font-size: 24px;
+	color: #fff;
+	background: var(--nf-strong);
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.nf-camera:active {
+	transform: translateY(-50%) scale(0.96);
+}
+
+/* ---- lists -------------------------------------------------------------- */
+
+.nf-section {
+	margin: 16px 0 8px;
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--nf-muted);
+}
+
+.nf-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.nf-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-areas: "main right" "sub right";
+	column-gap: 12px;
+	align-items: center;
+	width: 100%;
+	min-height: 60px;
+	padding: 10px 14px;
+	text-align: left;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+	border-radius: 12px;
+	cursor: pointer;
+	transition: border-color 150ms ease-out, background 150ms ease-out, transform 150ms ease-out;
+}
+
+.nf-row:not(:disabled):not(.nf-row-static):active {
+	transform: scale(0.99);
+	background: var(--nf-tint);
+	border-color: var(--nf-primary);
+}
+
+.nf-row:disabled,
+.nf-row-static {
+	cursor: default;
+	color: var(--nf-ink);
+	opacity: 1;
+}
+
+.nf-row-done {
+	opacity: 0.6 !important;
+}
+
+.nf-row-booked {
+	border-color: var(--nf-good);
+	background: var(--nf-good-tint);
+}
+
+.nf-row-static {
+	grid-template-columns: minmax(0, 1fr) auto 44px;
+	grid-template-areas: "main right x" "sub right x";
+	padding-right: 6px;
+}
+
+.nf-row-main {
+	grid-area: main;
+	font-size: 16.5px;
+	font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nf-row-sub {
+	grid-area: sub;
+	font-size: 14px;
+	color: var(--nf-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nf-row-right {
+	grid-area: right;
+	text-align: right;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--nf-strong);
+	font-variant-numeric: tabular-nums;
+}
+
+.nf-remove {
+	grid-area: x;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	font-size: 20px;
+	color: var(--nf-muted);
+	background: transparent;
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.nf-remove:active {
+	color: var(--nf-bad);
+	background: var(--nf-sunken);
+}
+
+.nf-tag {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--nf-strong);
+	background: var(--nf-tint);
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.nf-tag-good {
+	color: var(--nf-good);
+	background: var(--nf-good-tint);
+}
+
+.nf-dim {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--nf-muted);
+}
+
+.nf-note {
+	padding: 14px 16px;
+	margin-bottom: 10px;
+	font-size: 15px;
+	color: var(--nf-muted);
+	background: var(--nf-sunken);
+	border-radius: 12px;
+}
+
+/* ---- cards -------------------------------------------------------------- */
+
+.nf-card {
+	padding: 14px 16px;
+	margin-bottom: 12px;
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+	border-radius: 14px;
+}
+
+.nf-card-title {
+	font-size: 19px;
+	font-weight: 700;
+}
+
+.nf-fact {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 0;
+	font-size: 15px;
+	border-bottom: 1px solid var(--nf-line);
+}
+
+.nf-fact:last-child {
+	border-bottom: none;
+}
+
+.nf-fact span {
+	color: var(--nf-muted);
+}
+
+.nf-fact b {
+	text-align: right;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.nf-totals {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin-top: 12px;
+}
+
+.nf-totals div {
+	padding: 10px 12px;
+	background: var(--nf-sunken);
+	border-radius: 10px;
+}
+
+.nf-totals b {
+	display: block;
+	font-size: 24px;
+	font-variant-numeric: tabular-nums;
+}
+
+.nf-totals span {
+	font-size: 13px;
+	color: var(--nf-muted);
+}
+
+/* ---- move / use --------------------------------------------------------- */
+
+.nf-toggle {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+	padding: 4px;
+	margin-bottom: 12px;
+	background: var(--nf-sunken);
+	border-radius: 12px;
+}
+
+.nf-toggle button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 48px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--nf-muted);
+	background: transparent;
+	border: none;
+	border-radius: 9px;
+	cursor: pointer;
+}
+
+.nf-toggle button.active {
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.nf-pair {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.nf-label {
+	display: block;
+	margin-bottom: 12px;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--nf-muted);
+}
+
+.nf-pair .nf-label {
+	margin-bottom: 0;
+}
+
+.nf-select,
+.nf-text,
+.nf-fixed {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 52px;
+	margin-top: 4px;
+	padding: 0 12px;
+	font-size: 16px;
+	font-weight: 500;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+	border-radius: 10px;
+}
+
+.nf-fixed {
+	background: var(--nf-sunken);
+	border-color: transparent;
+}
+
+.nf-fixed .ph {
+	color: var(--nf-strong);
+	font-size: 18px;
+}
+
+/* ---- actions ------------------------------------------------------------ */
+
+/* Sticky, so a long list never pushes the button off the bottom of the screen. */
+.nf-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 5;
+	margin: 14px -12px 0;
+	padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+	background: var(--nf-bg);
+	border-top: 1px solid var(--nf-line);
+}
+
+.nf-actions-top {
+	position: static;
+	margin: 0 0 14px;
+	padding: 0;
+	border-top: none;
+	background: transparent;
+}
+
+.nf-submit,
+.nf-secondary {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	width: 100%;
+	border-radius: 14px;
+	cursor: pointer;
+}
+
+.nf-submit {
+	min-height: 60px;
+	font-size: 19px;
+	font-weight: 700;
+	color: #fff;
+	background: var(--nf-strong);
+	border: none;
+}
+
+.nf-submit:active {
+	transform: scale(0.99);
+}
+
+.nf-submit:disabled {
+	color: var(--nf-muted);
+	background: var(--nf-sunken);
+	cursor: default;
+	transform: none;
+}
+
+.nf-secondary {
+	min-height: 54px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--nf-ink);
+	background: var(--nf-bg);
+	border: 2px solid var(--nf-line);
+}
+
+.nf-secondary:active {
+	background: var(--nf-sunken);
+}
+
+.nf-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* ---- done --------------------------------------------------------------- */
+
+.nf-done {
+	padding: 32px 16px;
+	margin-bottom: 14px;
+	text-align: center;
+	background: var(--nf-good-tint);
+	border: 2px solid var(--nf-good);
+	border-radius: 14px;
+}
+
+.nf-tick {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 64px;
+	height: 64px;
+	font-size: 34px;
+	color: #fff;
+	background: var(--nf-good);
+	border-radius: 50%;
+}
+
+.nf-done-msg {
+	margin-top: 12px;
+	font-size: 21px;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.nf-done-ref {
+	margin-top: 4px;
+	font-size: 14px;
+	color: var(--nf-muted);
+	overflow-wrap: anywhere;
+}
+
+/* ---- the quantity dialog (rendered inside a Frappe dialog) ---------------- */
+
+.nf-ask {
+	margin-bottom: 4px;
+}
+
+.nf-ask-name {
+	font-size: 17px;
+	font-weight: 700;
+}
+
+.nf-ask-info {
+	margin-top: 2px;
+	font-size: 14px;
+	color: var(--text-muted, #5b6471);
+}
+
+/* ---- labels (on screen; printing opens its own window) ------------------- */
+
+.nf-sheet-head {
+	margin: 16px 0 8px;
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--nf-muted);
+}
+
+.nf-label-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 10px;
+}
+
+.nf-label-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px;
+	color: #111;
+	background: #fff;
+	border: 1px dashed #9aa3b3;
+	border-radius: 10px;
+}
+
+.nf-qr {
+	width: 96px;
+	height: 96px;
+	flex: 0 0 96px;
+}
+
+.nf-label-job .nf-qr {
+	width: 140px;
+	height: 140px;
+	flex-basis: 140px;
+}
+
+.nf-qr svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.nf-label-text {
+	min-width: 0;
+}
+
+.nf-label-big {
+	font-size: 18px;
+	font-weight: 800;
+	overflow-wrap: anywhere;
+}
+
+.nf-label-job .nf-label-big {
+	font-size: 26px;
+}
+
+.nf-label-small {
+	font-size: 13px;
+	color: #444;
+	overflow-wrap: anywhere;
+}
