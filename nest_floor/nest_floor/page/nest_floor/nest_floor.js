@@ -6,6 +6,10 @@
 // (frappe.ui.Scanner), a hardware scanner (it types the code and presses Enter) or the
 // keyboard; all three land in the same handler.
 //
+// Where nest_projects is installed, people with a projects role also get the Jobs screens:
+// their jobs, what is next, what holds a job up, and a material ticked off as received.
+// The stock screens show only to the stock, buying and making roles.
+//
 // Desk Page: mounts inside page.body (jQuery in v16, CoWork_Helper gotcha 2026-05-10).
 // HTML is built as string arrays joined with "\n" (page-bundle rule).
 // Bump BUILD_MARKER with every CSS change (gotcha 2026-08-18).
@@ -13,7 +17,7 @@
 frappe.pages['nest-floor'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({ parent: wrapper, title: __('Shop Floor'), single_column: true });
 
-	var BUILD_MARKER = 'v0.0.1-2026-10-07-first';
+	var BUILD_MARKER = 'v0.0.2-2026-10-30-jobs';
 	console.log('Shop Floor loaded:', BUILD_MARKER);
 
 	[
@@ -93,13 +97,20 @@ class NestFloor {
 		this.page = page;
 		this.ctx = null;
 		this.basket = [];
+		// Stock screens for the stock, buying and making roles. Jobs screens where nest_projects
+		// is installed (boot lists installed apps' versions), for its roles.
+		this.can_stock = !!frappe.user.has_role(['Stock User', 'Stock Manager', 'Purchase User', 'Manufacturing User', 'System Manager']);
+		this.can_jobs = !!(frappe.boot.versions || {}).nest_projects && !!frappe.user.has_role(['Projects User', 'Projects Manager']);
 		this.$root = $('<div class="nf-root"></div>').appendTo(page.body);
 		var $head = page.head ? $(page.head) : $(page.wrapper).find('.page-head');
 		if ($head && $head.length) $head.hide();
-		this.load().then(() => this.open_route());
+		// If the server refuses the stock screens after all, fall back to what the roles still allow.
+		this.load().catch(() => { this.can_stock = false; }).then(() => this.open_route());
 	}
 
+	// Stores and stock rights are for the stock screens; the server refuses them to anyone else.
 	load() {
+		if (!this.can_stock) return Promise.resolve();
 		return nf_call('bootstrap').then((ctx) => { this.ctx = ctx; });
 	}
 
@@ -110,7 +121,8 @@ class NestFloor {
 	// nest-floor/receive, /to-site, /used, /find or /labels opens that screen (home tiles link here).
 	open_route() {
 		var asked = (frappe.get_route() || [])[1];
-		if (asked === 'receive') this.receive_list();
+		if (!this.can_stock) this.home();
+		else if (asked === 'receive') this.receive_list();
 		else if (asked === 'to-site') this.pick_job(__('Goods to site'), (job) => this.move(job, 'to'));
 		else if (asked === 'used') this.pick_job(__('Used on site'), (job) => this.use(job));
 		else if (asked === 'find') this.find();
@@ -291,8 +303,15 @@ class NestFloor {
 	// ---- home --------------------------------------------------------------
 
 	home() {
+		// Without a stock role the Jobs screens are the whole page.
+		if (!this.can_stock) {
+			if (this.can_jobs) this.jobs_home();
+			else this.render('<div class="nf-note">' + __('Nothing on the shop floor for your roles.') + '</div>');
+			return;
+		}
 		var ctx = this.ctx;
 		var tiles = [];
+		if (this.can_jobs) tiles.push(this.tile('jobs', 'kanban', __('Jobs'), __('Yours, what is next and what holds them up')));
 		if (ctx.can_receive) tiles.push(this.tile('receive', 'tray-arrow-down', __('Receive'), __('Book a delivery in against a purchase order')));
 		if (ctx.can_move) {
 			tiles.push(this.tile('to-site', 'truck', __('Goods to site'), __('Send stock from the store to a job')));
@@ -325,6 +344,7 @@ class NestFloor {
 			else if (go === 'find') this.find();
 			else if (go === 'labels') this.pick_job(__('Print labels'), (job) => this.labels(job.name));
 			else if (go === 'board') frappe.set_route('job-board');
+			else if (go === 'jobs') this.jobs_home();
 		});
 		this.bind_scan((term) => this.home_scan(term));
 	}
@@ -443,6 +463,151 @@ class NestFloor {
 				else if (go === 'back') this.move(job, 'back');
 				else if (go === 'labels') this.labels(job.name);
 				else if (go === 'board') frappe.set_route('job-board', { job: job.name });
+			});
+		});
+	}
+
+	// ---- jobs (nest_projects) ----------------------------------------------
+	// For the people who run jobs rather than stock. Read and written through nest_projects'
+	// own methods with the user's own permissions; the one write is a material's status.
+
+	jobs_home() {
+		this.render([
+			this.head(__('Jobs'), __('Yours first; type to find any job'), this.can_stock),
+			this.scan_box(__('Scan a job card, or type a job, customer or title')),
+			'<div class="nf-section" data-jobs-title>' + __('My jobs') + '</div>',
+			'<div class="nf-list" data-jobs><div class="nf-note">' + __('Loading jobs...') + '</div></div>'
+		].join('\n'));
+		this.bind_back(() => this.home());
+
+		var all = [];
+		var users = {};
+		var closed = {};
+		var me = frappe.session.user;
+		var today = frappe.datetime.get_today();
+		var who = function(email) { return (users[email] || {}).full_name || email; };
+		var match = function(filter) {
+			var f = filter.toLowerCase();
+			return all.filter(function(j) {
+				return [j.name, j.project_name, j.customer].some(function(v) { return String(v || '').toLowerCase().indexOf(f) !== -1; });
+			});
+		};
+		// Nothing typed: my open jobs, soonest due first. Something typed: any job that matches.
+		var paint = (filter) => {
+			var shown = filter
+				? match(filter).slice(0, 50)
+				: all.filter(function(j) { return j.job_owner === me && !closed[j.job_stage]; }).sort(function(a, b) {
+					return String(a.expected_end_date || '9999').localeCompare(String(b.expected_end_date || '9999'));
+				});
+			this.$root.find('[data-jobs-title]').text(filter ? __('Matching jobs') : __('My jobs'));
+			var $list = this.$root.find('[data-jobs]');
+			if (!shown.length) {
+				$list.html('<div class="nf-note">' + (filter ? __('No job matches that.') : __('No open jobs with you.')) + '</div>');
+				return;
+			}
+			$list.html(shown.map((j) => {
+				var held = [j.job_hold_reason, j.job_waiting_on ? __('waiting on {0}', [who(j.job_waiting_on)]) : '', j.job_blocker].filter(Boolean);
+				var sub = held.length
+					? '<span class="nf-late">' + nf_icon('warning') + ' ' + __('Held up') + '</span> ' + held.map(nf_esc).join(' · ')
+					: (j.job_next_action ? nf_icon('arrow-right') + ' ' + nf_esc(j.job_next_action) : nf_esc(j.customer || ''));
+				var late = j.expected_end_date && j.expected_end_date < today && !closed[j.job_stage];
+				var due = j.expected_end_date ? frappe.datetime.str_to_user(j.expected_end_date) : '';
+				var right = (j.job_stage ? '<span class="nf-tag">' + nf_esc(j.job_stage) + '</span>' : '') +
+					(due ? '<br>' + (late ? '<span class="nf-late">' + nf_icon('warning') + ' ' + due + '</span>' : '<span class="nf-dim">' + due + '</span>') : '');
+				return this.row('data-job="' + nf_esc(j.name) + '"', nf_esc(j.name) + (j.project_name ? ' <span class="nf-dim">' + nf_esc(j.project_name) + '</span>' : ''), sub, right);
+			}).join('\n'));
+			$list.find('[data-job]').on('click', (e) => this.job_panel($(e.currentTarget).attr('data-job')));
+		};
+
+		frappe.call({ method: 'nest_projects.api.get_board' }).then((r) => {
+			var board = r.message || {};
+			all = board.jobs || [];
+			users = board.users || {};
+			me = board.me || me;
+			today = board.today || today;
+			(board.stages || []).forEach(function(s) { if (s.is_closed) closed[s.name] = 1; });
+			this.closed_stages = closed;
+			paint('');
+		});
+		// A job card scanned, or a job number typed, opens the job; so does a search with one answer.
+		this.bind_scan((term) => {
+			var exact = all.filter(function(j) { return j.name.toLowerCase() === term.toLowerCase(); })[0];
+			var found = exact ? [exact] : match(term);
+			if (found.length === 1) this.job_panel(found[0].name);
+			else if (!found.length) this.say(__('No job matches {0}.', [term]));
+			else paint(term);
+		}, paint);
+	}
+
+	job_panel(name) {
+		frappe.call({ method: 'nest_projects.panel.get_job', args: { project: name } }).then((r) => this.paint_job(r.message));
+	}
+
+	paint_job(job) {
+		var users = job.users || {};
+		var who = function(email) { return (users[email] || {}).full_name || email; };
+		var late = job.due && job.due < frappe.datetime.get_today() && !(this.closed_stages || {})[job.stage];
+		var due = job.due ? frappe.datetime.str_to_user(job.due) : '';
+		var facts = [
+			job.customer ? [__('Customer'), nf_esc(job.customer)] : null,
+			job.site ? [__('Site'), nf_esc(job.site)] : null,
+			job.stage ? [__('Stage'), nf_esc(job.stage)] : null,
+			job.owner ? [__('Responsible'), nf_esc(who(job.owner))] : null,
+			due ? [__('Due'), late ? '<span class="nf-late">' + nf_icon('warning') + ' ' + due + ' ' + __('(overdue)') + '</span>' : due] : null
+		].filter(Boolean);
+		var held = [job.hold_reason, job.waiting_on ? __('Waiting on {0}', [who(job.waiting_on)]) : '', job.blocker].filter(Boolean);
+		var materials = job.materials || [];
+		this.render([
+			this.head(job.name, job.project_name, true),
+			'<div class="nf-card">',
+			facts.map(function(f) { return '<div class="nf-fact"><span>' + nf_esc(f[0]) + '</span><b>' + f[1] + '</b></div>'; }).join('\n'),
+			'</div>',
+			held.length ? [
+				'<div class="nf-card nf-held">',
+				'  <div class="nf-card-title">' + nf_icon('warning') + ' ' + __('Held up') + '</div>',
+				'  <div>' + held.map(nf_esc).join(' · ') + '</div>',
+				'</div>'
+			].join('\n') : '',
+			job.next_action ? [
+				'<div class="nf-card">',
+				'  <div class="nf-card-title">' + nf_icon('arrow-right') + ' ' + __('Next action') + '</div>',
+				'  <div>' + nf_esc(job.next_action) + '</div>',
+				'</div>'
+			].join('\n') : '',
+			'<div class="nf-section">' + __('Materials') + '</div>',
+			materials.length ? '<div class="nf-list">' + materials.map((m) => {
+				var sub = [
+					m.long_lead ? '<span class="nf-tag">' + __('Long lead') + '</span>' : '',
+					m.item && m.item !== m.description ? nf_esc(m.item) : '',
+					m.expected_on ? nf_esc(__('Expected {0}', [frappe.datetime.str_to_user(m.expected_on)])) : ''
+				].filter(Boolean).join(' · ');
+				var good = m.status === 'Received' || m.status === 'In Stock';
+				var right = m.status ? '<span class="nf-tag' + (good ? ' nf-tag-good' : '') + '">' + nf_esc(__(m.status)) + '</span>' : '';
+				// Lines on a purchase order follow its goods receipt, not a tap.
+				var open = job.can_write && !m.purchase_order && (m.status === 'To Order' || m.status === 'Ordered');
+				return [
+					this.row('disabled', nf_qty(m.qty) + ' × ' + nf_esc(m.description || m.item || ''), sub, right),
+					open ? '<button class="nf-submit" data-received="' + nf_esc(m.name) + '">' + nf_icon('check') + __('Received') + '</button>' : ''
+				].join('\n');
+			}).join('\n') + '</div>' : '<div class="nf-note">' + __('No materials on this job.') + '</div>',
+			'<div class="nf-links">',
+			'  <button class="nf-link" data-go="board">' + nf_icon('kanban') + __('Open on the board') + '</button>',
+			'</div>'
+		].join('\n'));
+		this.bind_back(() => this.jobs_home());
+		this.$root.find('[data-go]').on('click', () => frappe.set_route('job-board', { job: job.name }));
+		// Ticked off as it arrives; the answer is the job, redrawn where the thumb was.
+		this.$root.find('[data-received]').on('click', (e) => {
+			var y = window.scrollY;
+			frappe.call({
+				method: 'nest_projects.panel.set_material_status',
+				args: { project: job.name, row: $(e.currentTarget).attr('data-received'), status: 'Received' },
+				freeze: true,
+				freeze_message: __('Recording...')
+			}).then((r) => {
+				this.paint_job(r.message);
+				window.scrollTo(0, y);
+				this.say(__('Marked received.'), 'green');
 			});
 		});
 	}

@@ -4,7 +4,7 @@
  "doctype": "Page",
  "icon": "scan",
  "idx": 0,
- "modified": "2026-10-07 12:00:00.000000",
+ "modified": "2026-10-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Nest Floor",
  "name": "nest-floor",
@@ -26,6 +26,12 @@
   },
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Projects User"
+  },
+  {
+   "role": "Projects Manager"
   }
  ],
  "script": null,

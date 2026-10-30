@@ -444,6 +444,12 @@
 	color: var(--nf-muted);
 }
 
+/* Overdue or held up; always with a warning icon or words, never colour alone. */
+.nf-late {
+	font-weight: 700;
+	color: var(--nf-bad);
+}
+
 .nf-note {
 	padding: 14px 16px;
 	margin-bottom: 10px;
@@ -466,6 +472,14 @@
 .nf-card-title {
 	font-size: 19px;
 	font-weight: 700;
+}
+
+.nf-held {
+	border-color: var(--nf-bad);
+}
+
+.nf-held .nf-card-title {
+	color: var(--nf-bad);
 }
 
 .nf-fact {

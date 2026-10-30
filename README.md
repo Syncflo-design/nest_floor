@@ -21,6 +21,22 @@ card instead.
 
 ## Screens
 
+Who sees what: the stock screens below show only to Stock User, Stock Manager,
+Purchase User, Manufacturing User or System Manager. The Jobs screens show where
+`nest_projects` is installed, to Projects User or Projects Manager. Someone with
+only a projects role opens straight onto Jobs; someone with both gets a Jobs
+tile on the stock home.
+
+- **Jobs**: my open jobs (I am the responsible person), soonest due first, each
+  with its stage, due date (overdue in red with a warning mark), and what is
+  holding it up or else its next action. Type to find any job by number,
+  customer or title; scan a job card to open it.
+- **A job (Jobs)**: stage, responsible person, due date, what is holding it up
+  (reason, who it is waiting on, details), the next action, and its materials
+  (quantity, description, status, long-lead mark). A material still To Order or
+  Ordered has one button, **Received**. That is the only write; stage moves and
+  handovers stay on the Job Board, which it links to. Reads and the write go
+  through `nest_projects`' own methods.
 - **Home**: scan a job card to open the job, a purchase order to receive it, or
   an item to see where it is.
 - **Receive**: open purchase orders, soonest due first. Scan items off the
