@@ -1,7 +1,15 @@
-MIT License
+Proprietary Licence
 
-Copyright (c) 2026 Syncflo / NestERP
+Copyright (c) 2026 Syncflo (Pty) Ltd. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction.
+This software, including its source code, data structures and documentation, is the
+proprietary and confidential property of Syncflo (Pty) Ltd.
+
+No part of it may be used, copied, modified, merged, published, distributed,
+sublicensed, sold, reverse engineered or disclosed to any third party, in whole or in
+part, except under a written licence agreement signed by Syncflo (Pty) Ltd, and then
+only as that agreement allows.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT, EXCEPT AS A WRITTEN LICENCE AGREEMENT STATES.
